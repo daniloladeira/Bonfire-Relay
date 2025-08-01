@@ -1,0 +1,38 @@
+{
+  "name": "bonfire-relay",
+  "version": "1.0.0",
+  "description": "Sistema de mensageria Dark Souls com RabbitMQ",
+  "main": "api-gateway/server.js",
+  "scripts": {
+    "test": "node scripts/test-system.js",
+    "start": "node api-gateway/server.js",
+    "start:api": "node api-gateway/server.js",
+    "start:publisher": "node producers/player-publisher.js",
+    "start:npc": "node consumers/npc-consumer.js",
+    "start:invader": "node consumers/invader-consumer.js",
+    "setup": "node scripts/setup-queues.js",
+    "dev": "nodemon api-gateway/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/daniloladeira/Bonfire-Relay.git"
+  },
+  "keywords": ["dark-souls", "rabbitmq", "messaging", "pub-sub"],
+  "author": "Danilo Ladeira",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/daniloladeira/Bonfire-Relay/issues"
+  },
+  "homepage": "https://github.com/daniloladeira/Bonfire-Relay#readme",
+  "dependencies": {
+    "amqplib": "^0.10.8",
+    "express": "^5.1.0",
+    "dotenv": "^16.3.1",
+    "cors": "^2.8.5",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "concurrently": "^8.2.0"
+  }
+}
