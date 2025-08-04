@@ -1,15 +1,5 @@
 const readline = require('readline');
-const chalk = require('c  showMenu() {
-    console.log('\n[=] ═══ COMANDOS DISPONÍVEIS ═══');
-    console.log('[>] /msg <mensagem>     - Enviar mensagem');
-    console.log('[X] /invade <jogador>   - Iniciar invasão');
-    console.log('[*] /bonfire <nome>     - Acender fogueira');
-    console.log('[?] /zone <nome>       - Mudar de zona');
-    console.log('[i] /status            - Ver status');
-    console.log('[-] /quit              - Sair');
-    console.log('═══════════════════════════════════════\n');
-    this.showPrompt();
-  }st { v4: uuidv4 } = require('uuid');
+const { v4: uuidv4 } = require('uuid');
 const RabbitMQConnection = require('../shared/rabbitmq');
 require('dotenv').config();
 
@@ -70,14 +60,17 @@ class PlayerPublisher {
   }
 
   showMenu() {
-    console.log('\n� ═══ COMANDOS DISPONÍVEIS ═══');
-    console.log('[>] /msg <mensagem>     - Enviar mensagem');
-    console.log('[X] /invade <jogador>   - Iniciar invasão');
-    console.log('[*] /bonfire <nome>     - Acender fogueira');
-    console.log('[?] /zone <nome>       - Mudar de zona');
-    console.log('[i] /status            - Ver status');
-    console.log('[-] /quit              - Sair');
-    console.log('═══════════════════════════════════════\n');
+    console.log('\n=== COMANDOS DO JOGO ===');
+    console.log('[>] /msg <mensagem>     - Conversar com outros jogadores');
+    console.log('[*] /bonfire <nome>     - Acender fogueira (salvar progresso)');
+    console.log('[?] /zone <nome>       - Viajar para outra zona');
+    console.log('[!] /explore           - Explorar a área atual');
+    console.log('[📚] /story <texto>     - Contar uma história');
+    console.log('[🎲] /roll             - Rolar dados da sorte');
+    console.log('[🎒] /inventory        - Ver seu inventário');
+    console.log('[i] /status            - Ver informações do personagem');
+    console.log('[-] /quit              - Sair do jogo');
+    console.log('========================================\n');
     this.showPrompt();
   }
 
@@ -125,14 +118,6 @@ class PlayerPublisher {
         await this.sendMessage(argument);
         break;
 
-      case '/invade':
-        if (!argument) {
-          console.log('[X] Uso: /invade <nome do jogador>');
-          return;
-        }
-        await this.sendInvasion(argument);
-        break;
-
       case '/bonfire':
         if (!argument) {
           console.log('[*] Uso: /bonfire <nome da fogueira>');
@@ -147,7 +132,28 @@ class PlayerPublisher {
           return;
         }
         this.currentZone = argument;
-        console.log(`[?] Você entrou em ${this.currentZone}`);
+        console.log(`[?] Você viajou para ${this.currentZone}`);
+        await this.sendMessage(`chegou em ${this.currentZone}`);
+        break;
+
+      case '/explore':
+        await this.explore();
+        break;
+
+      case '/story':
+        if (!argument) {
+          console.log('[📚] Uso: /story <sua história>');
+          return;
+        }
+        await this.tellStory(argument);
+        break;
+
+      case '/roll':
+        await this.rollDice();
+        break;
+
+      case '/inventory':
+        this.showInventory();
         break;
 
       case '/status':
@@ -163,9 +169,65 @@ class PlayerPublisher {
         break;
 
       default:
-        console.log(`❓ Comando desconhecido: ${cmd}`);
+        console.log(`? Comando desconhecido: ${cmd}`);
         console.log('[i] Digite /help para ver os comandos disponíveis');
     }
+  }
+
+  async explore() {
+    const explorations = [
+      'exploro os arredores procurando por tesouros escondidos',
+      'investigo ruínas antigas em busca de segredos',
+      'procuro por itens úteis pela área',
+      'observo a paisagem em busca de algo interessante',
+      'caminho pelas trilhas menos conhecidas',
+      'verifico atrás de pedras e árvores'
+    ];
+    
+    const action = explorations[Math.floor(Math.random() * explorations.length)];
+    await this.sendMessage(`${action} em ${this.currentZone}`);
+  }
+
+  async tellStory(story) {
+    await this.sendMessage(`conta uma história: "${story}"`);
+  }
+
+  async rollDice() {
+    const roll = Math.floor(Math.random() * 20) + 1;
+    const results = {
+      20: 'CRÍTICO! Sorte incrível! ⭐',
+      1: 'Azar total... mas faz parte! 💀',
+      'high': 'Boa sorte! 😊',
+      'medium': 'Resultado mediano. 😐',
+      'low': 'Podia ser melhor... 😅'
+    };
+    
+    let result;
+    if (roll === 20) result = results[20];
+    else if (roll === 1) result = results[1];
+    else if (roll >= 15) result = results.high;
+    else if (roll >= 8) result = results.medium;
+    else result = results.low;
+    
+    console.log(`[🎲] Você rolou: ${roll}/20 - ${result}`);
+    await this.sendMessage(`rola os dados e tira ${roll}! ${result}`);
+  }
+
+  showInventory() {
+    // Inventário simulado baseado em ações
+    const items = [
+      'Poção de Cura',
+      'Mapa da Região',
+      'Moedas de Ouro (15)',
+      'Pedra de Fogueira',
+      'Pergaminho Misterioso'
+    ];
+    
+    console.log('\n[🎒] === SEU INVENTÁRIO ===');
+    items.forEach((item, index) => {
+      console.log(`${index + 1}. ${item}`);
+    });
+    console.log('===========================\n');
   }
 
   async sendMessage(message) {
@@ -184,25 +246,6 @@ class PlayerPublisher {
     });
 
     console.log(`[>] Mensagem enviada: "${message}"`);
-  }
-
-  async sendInvasion(target) {
-    const invasionData = {
-      id: uuidv4(),
-      invader: this.playerName,
-      target: target,
-      zone: this.currentZone,
-      covenant: 'Darkwraith',
-      timestamp: new Date().toISOString(),
-      type: 'INVASION'
-    };
-
-    await this.rabbitmq.sendToQueue('ashen_invasions', invasionData, {
-      replyTo: this.replyQueue.queue,
-      correlationId: invasionData.id
-    });
-
-    console.log(`[X] Invadindo ${target} em ${this.currentZone}...`);
   }
 
   async lightBonfire(bonfireName) {

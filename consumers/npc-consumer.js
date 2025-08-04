@@ -15,13 +15,54 @@ class NPCConsumer {
         "[SMTH] Andre: 'Ah, um cliente! Que arma posso forjar para você?'",
         "[SAGE] Logan: 'Interessante... você busca conhecimento arcano?'",
         "[SERP] Frampt: 'Ahh, você trouxe almas? Excelente...'",
-        "[THIF] Patches: 'Heh heh... mais um tolo perdido nas catacumbas.'"
+        "[THIF] Patches: 'Heh heh... mais um tolo perdido.'"
       ],
-      invasions: [
-        "[FIRE] Firekeeper: 'Cuidado, chosen one. Dark spirits approach...'",
-        "[SMTH] Andre: 'Invasores! Pegue uma arma, rápido!'",
-        "[SAGE] Logan: 'A magia da invasão... fascinante e perigosa.'",
-        "[SERP] Frampt: 'Keh heh heh... que batalha interessante se aproxima.'"
+      casual_greetings: [
+        "[WARR] Warrior: 'Eai parceiro, tudo bem?'",
+        "[KNGT] Knight: 'Olá, aventureiro.'",
+        "[ARCH] Archer: 'E aí, como vai a jornada?'",
+        "[MERC] Mercenary: 'Fala aí, guerreiro!'",
+        "[NPC ] Villager: 'Oi! Seja bem-vindo.'"
+      ],
+      farewells: [
+        "[FIRE] Firekeeper: 'May the flames guide thee.'",
+        "[SMTH] Andre: 'Stay safe out there!'",
+        "[SAGE] Logan: 'Knowledge is power. Use it wisely.'",
+        "[SERP] Frampt: 'Keh heh heh... until next time.'",
+        "[WARR] Warrior: 'Até logo, amigo!'",
+        "[KNGT] Knight: 'Que a sorte te acompanhe.'"
+      ],
+      praise_sun: [
+        "[WARR] Solaire: 'Praise the sun! \\\\[T]/'",
+        "[KNGT] Knight: 'Ah, um fellow sun worshipper!'",
+        "[CLER] Cleric: 'The sun's blessing upon you!'",
+        "[WARR] Warrior: 'Jolly cooperation!'",
+        "[PALA] Paladin: 'May the sun illuminate your path.'"
+      ],
+      questions: [
+        "[SAGE] Logan: 'Interessante pergunta... deixe-me pensar.'",
+        "[MERC] Merchant: 'Hmm, talvez eu tenha uma resposta.'",
+        "[SCHO] Scholar: 'Ah, curiosidade é uma virtude.'",
+        "[WISE] Wise Man: 'Uma questão profunda, jovem.'"
+      ],
+      help_requests: [
+        "[KNGT] Knight: 'Precisa de ajuda? Estou aqui.'",
+        "[CLER] Cleric: 'Posso te auxiliar, irmão.'",
+        "[WARR] Warrior: 'Conte comigo para a batalha!'",
+        "[MAGE] Mage: 'Minha magia está à sua disposição.'"
+      ],
+      compliments: [
+        "[FIRE] Firekeeper: 'Your kindness warms the flame.'",
+        "[KNGT] Knight: 'Você tem um coração nobre.'",
+        "[SAGE] Logan: 'Wise words from a wise soul.'",
+        "[MERC] Merchant: 'You seem like good people.'"
+      ],
+      general_chat: [
+        "[NPC ] Villager: 'Como vai sua aventura?'",
+        "[WARR] Warrior: 'Que novidades você traz?'",
+        "[TRAV] Traveler: 'Interessante... me conte mais.'",
+        "[BARD] Bard: 'Essa história renderia uma boa canção!'",
+        "[MERC] Merchant: 'Sempre bom trocar uma ideia.'"
       ],
       bonfires: [
         "[FIRE] Firekeeper: 'A chama foi acesa. Rest well, warrior.'",
@@ -29,18 +70,11 @@ class NPCConsumer {
         "[SMTH] Andre: 'Aha! A fogueira brilha forte. Boa escolha.'",
         "[SAGE] Logan: 'The flame connects all things... remarkable.'"
       ],
-      farewells: [
-        "[FIRE] Firekeeper: 'May the flames guide thee.'",
-        "[SMTH] Andre: 'Stay safe out there!'",
-        "[SAGE] Logan: 'Knowledge is power. Use it wisely.'",
-        "[SERP] Frampt: 'Keh heh heh... until next time.'"
-      ],
-      general: [
-        "[NPC ] NPC: 'The darkness grows stronger each day...'",
-        "[WARR] Warrior: 'Praise the sun! \\\\[T]/'",
-        "[ARCH] Archer: 'Watch for traps ahead.'",
-        "[SORC] Sorcerer: 'The ancient magics stir...'",
-        "[KNGT] Knight: 'Honor guides my blade.'"
+      confusion: [
+        "[NPC ] Villager: 'Hmm, não entendi bem...'",
+        "[MERC] Merchant: 'Pode repetir isso?'",
+        "[GUAR] Guard: 'Do que você está falando?'",
+        "[SAGE] Logan: 'Intrigante... mas obscuro.'"
       ]
     };
   }
@@ -75,20 +109,11 @@ class NPCConsumer {
       
       console.log(`📥 [${zone}] ${sender}: "${text}"`);
       
-      // Determinar tipo de resposta baseado no conteúdo
-      let responseType = 'general';
-      const lowerText = text.toLowerCase();
-      
-      if (lowerText.includes('hello') || lowerText.includes('oi') || lowerText.includes('salve')) {
-        responseType = 'greetings';
-      } else if (lowerText.includes('bye') || lowerText.includes('tchau') || lowerText.includes('farewell')) {
-        responseType = 'farewells';
-      } else if (lowerText.includes('praise') || lowerText.includes('sun') || lowerText.includes('sol')) {
-        responseType = 'general';
-      }
+      // Analisar conteúdo da mensagem de forma mais inteligente
+      const responseType = this.analyzeMessage(text);
       
       // Gerar resposta
-      const response = this.generateResponse(responseType, sender, zone);
+      const response = this.generateResponse(responseType, sender, zone, text);
       
       // Enviar resposta se houver replyTo
       if (msg.properties.replyTo) {
@@ -108,13 +133,65 @@ class NPCConsumer {
         );
       }
       
-      console.log(`� Resposta: ${response}`);
+      console.log(`📤 Resposta: ${response}`);
       channel.ack(msg);
       
     } catch (error) {
       console.error('[-] Erro ao processar mensagem:', error);
       channel.nack(msg, false, true);
     }
+  }
+
+  analyzeMessage(text) {
+    const lowerText = text.toLowerCase();
+    
+    // Cumprimentos formais
+    if (lowerText.match(/\b(hello|greetings|salutations|good day)\b/)) {
+      return 'greetings';
+    }
+    
+    // Cumprimentos casuais
+    if (lowerText.match(/\b(eai|oi|olá|hey|hi|e aí|opa|salve)\b/)) {
+      return 'casual_greetings';
+    }
+    
+    // Despedidas
+    if (lowerText.match(/\b(bye|tchau|farewell|goodbye|até logo|see you|adeus)\b/)) {
+      return 'farewells';
+    }
+    
+    // Praise the sun
+    if (lowerText.match(/\b(praise|sun|sol|solar|light|luz)\b/)) {
+      return 'praise_sun';
+    }
+    
+    // Perguntas
+    if (lowerText.includes('?') || lowerText.match(/\b(como|what|onde|when|why|por que|qual|who)\b/)) {
+      return 'questions';
+    }
+    
+    // Pedidos de ajuda
+    if (lowerText.match(/\b(help|ajuda|socorro|need|preciso|can you|você pode)\b/)) {
+      return 'help_requests';
+    }
+    
+    // Elogios/agradecimentos
+    if (lowerText.match(/\b(obrigado|thanks|thank you|nice|good|great|awesome|cool|legal)\b/)) {
+      return 'compliments';
+    }
+    
+    // Conversa geral - mensagens longas ou com conteúdo
+    if (text.length > 15 && !lowerText.match(/\b(invade|fight|duel|battle)\b/)) {
+      return 'general_chat';
+    }
+    
+    // Se não detectou nada específico, resposta de confusão
+    if (text.length < 5) {
+      return 'confusion';
+    }
+    
+    // Default para conversa geral
+    return 'general_chat';
   }
 
   handleEvent(event, msg, channel) {
@@ -153,8 +230,15 @@ class NPCConsumer {
     }
   }
 
-  generateResponse(type, sender, zone) {
-    const responses = this.responses[type] || this.responses.general;
+  generateResponse(type, sender, zone, originalText = '') {
+    // Se o tipo não existir, usar fallback baseado no contexto
+    let responses = this.responses[type];
+    
+    if (!responses) {
+      console.log(`[!] Tipo de resposta '${type}' não encontrado, usando general_chat`);
+      responses = this.responses.general_chat || this.responses.confusion;
+    }
+    
     const randomResponse = responses[Math.floor(Math.random() * responses.length)];
     
     // Personalizar resposta baseado na zona

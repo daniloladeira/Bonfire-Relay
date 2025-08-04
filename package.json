@@ -9,9 +9,11 @@
     "start:api": "node api-gateway/server.js",
     "start:publisher": "node producers/player-publisher.js",
     "start:npc": "node consumers/npc-consumer.js",
-    "start:invader": "node consumers/invader-consumer.js",
+    "start:gamemaster": "node consumers/game-master-consumer.js",
     "setup": "node scripts/setup-queues.js",
-    "dev": "nodemon api-gateway/server.js"
+    "dev": "nodemon api-gateway/server.js",
+    "start:all": "powershell -ExecutionPolicy Bypass -File start-all.ps1",
+    "stop:all": "powershell -ExecutionPolicy Bypass -File stop-all.ps1"
   },
   "repository": {
     "type": "git",
@@ -29,7 +31,8 @@
     "express": "^5.1.0",
     "dotenv": "^16.3.1",
     "cors": "^2.8.5",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.0",
+    "chalk": "^4.1.2"
   },
   "devDependencies": {
     "nodemon": "^3.0.1",
